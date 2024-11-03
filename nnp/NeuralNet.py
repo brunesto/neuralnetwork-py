@@ -47,11 +47,13 @@ class NeuralNetConfig:
     # config: number of neurons in each layer
     layer_sizes = [4, 12, 3]
     # learning rate
-    rate = 0.3
+    rate = 0.1
     # seed for populating initial weights
     seed = 0
 
-    normalize_z=True 
+    normalize_z=False
+    random_weight=True
+    initial_weight_f=5
 
     # activation function
     def sigma(self, z: float) -> float:
@@ -68,8 +70,17 @@ class NeuralNetConfig:
         
     def clone(self):
         return copy.deepcopy(self)
-    
+
+# it seems that
+# TANH is not able to grow past the original weights
+# 
 TANH=NeuralNetConfig()
+TANH.sigma=lambda x:math.tanh(x)
+def tanhd(x):
+    s = math.tanh(x)
+    v = 1 - s * s
+TANH.sigmad=tanhd
+    
 
 LINEAR=NeuralNetConfig()
 LINEAR.sigma=lambda x:x
@@ -111,6 +122,11 @@ class NeuralNet:
         for i in range(0, len(config.layer_sizes)):
             self.ls.append(zeros(config.layer_sizes[i]))
 
+        # for each neuron, keep its z value (z: sum of weighted input (incl bias) before activation function)
+        self.zs = []
+        for i in range(0, len(config.layer_sizes)):
+            self.zs.append(zeros(config.layer_sizes[i]))
+
         # weights
         # ws[0] are the weights to update l[1] from l[0]
         # ws[0][-1] is an extra weight which is the bias
@@ -123,9 +139,11 @@ class NeuralNet:
         for wi in range(0, len(self.ws)):
             for no in range(0, len(self.ws[wi])):
                 for ni in range(0, len(self.ws[wi][no])):
-                    w=(random.random()-0.5)
-                    #w=(ni/len(self.ws[wi][no]))-0.5
-                    self.ws[wi][no][ni] = w
+                    if self.config.random_weight:
+                      w=(random.random()-0.5)
+                    else:
+                      w=((ni/len(self.ws[wi][no]))-0.5)
+                    self.ws[wi][no][ni] = w*self.config.initial_weight_f
         print(self.ws)
         self.dh = 0
         self.dls = None
@@ -134,7 +152,7 @@ class NeuralNet:
         self.reset_dls()
         self.reset_dws()
 
-    # compute the activation on lo
+    # compute the  z+activation on lo
     # based on previous layer li and weight wo
     def compute_neuron(self, li, wo):
         z = 0
@@ -149,16 +167,17 @@ class NeuralNet:
 
         # activation function aka sigma
         a = self.config.sigma(wavg)
-        return a
+        return (wavg,a)
 
     # compute the layer lo
-    def compute_layer(self, li, wio, lo):
+    def compute_layer(self, li, wio, lo,zo):
         # print("compute_layer ",li)
         for no in range(0, len(lo)):
             # print(f"neuron {no}")
-            a = self.compute_neuron(li, wio[no])
+            z,a = self.compute_neuron(li, wio[no])
             # print(f"neuron {no} ={v}")
             lo[no] = a
+            zo[no] = z
 
     # forward computation
     def compute_network(self, inputs):
@@ -166,7 +185,7 @@ class NeuralNet:
         self.ls[0] = inputs
         for i in range(1, len(self.config.layer_sizes)):
             # print(f"layer {i}")
-            self.compute_layer(self.ls[i - 1], self.ws[i - 1], self.ls[i])
+            self.compute_layer(self.ls[i - 1], self.ws[i - 1], self.ls[i],self.zs[i])
         return self.ls[-1]
 
     def compute_error(self, inputs, expecteds):
@@ -213,7 +232,7 @@ class NeuralNet:
         # print("e",e)
 
         self.reset_dls()
-        self.dh = self.dh + 1
+        self.dh += 1
         # partial derivative of C over aLj (aLj: activation of last layer 's neuron j)
         for j in range(0, len(self.ls[L])):
             d_cost_aLj = error_functiond(self.ls[L][j], expecteds[j])
@@ -223,7 +242,7 @@ class NeuralNet:
 
         for l in range(L, 0, -1):
             for j in range(0, len(self.ls[l])):
-                d_a_z = self.config.sigmad(self.ls[l][j])
+                d_a_z = self.config.sigmad(self.zs[l][j])
                 d_cost_a = self.dls[l][j]
                 # weights
                 for k in range(0, len(self.ls[l - 1])):
@@ -233,27 +252,30 @@ class NeuralNet:
                     d_cost_w = d_cost_a * d_a_z * d_z_w
                     self.dws[l - 1][j][k] += d_cost_w
                 # bias
-                d_cost_b = self.dls[l][j] * d_a_z
+                d_z_b=1
+                d_cost_b = d_cost_a * d_a_z * d_z_b
                 self.dws[l - 1][j][-1] += d_cost_b
 
-            if l > 1:
+                if l > 1:
                 # partial derivative of C over neurons for previous layer
-                for k in range(0, len(self.ls[l - 1])):
-                    for j in range(0, len(self.ls[l])):
-                        d_z_preva = self.ws[l - 1][j][k]
-                        d_a_z = self.config.sigmad(self.ls[l - 1][k]) # bug here? should be sigmad(z) not sigmad(a) 
-                        d_cost_a = self.dls[l][j]
+                #for j in range(0, len(self.ls[l])):
+                #    d_a_z = self.config.sigmad(self.zs[l][j])
+                #    d_cost_a = self.dls[l][j]
+                    for k in range(0, len(self.ls[l - 1])):
+                        d_z_preva = self.ws[l - 1][j][k]                        
                         d_cost_preva=(d_z_preva*d_a_z*d_cost_a) #/ len(self.ls[l])
-                        self.dls[l - 1][k] += d_cost_a
+                        if self.config.normalize_z:
+                            d_cost_preva /= len(self.ls[l])
+                        self.dls[l - 1][k] += d_cost_preva
 
     def apply_dws(self):
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
-                for k in range(0, len(self.dws[l - 1][j])):  # also bias
+                for k in range(0, len(self.ls[l-1])+1):  # also bias
                     gradient=self.config.rate * self.dws[l - 1][j][k] / self.dh
                     #print(gradient)
-                    gradient=-math.sqrt(gradient) if (gradient>0) else math.sqrt(-gradient)
-                    self.ws[l - 1][j][k] += gradient
+                    #gradient=-math.sqrt(gradient) if (gradient>0) else math.sqrt(-gradient)
+                    self.ws[l - 1][j][k] -= gradient
 
 
 

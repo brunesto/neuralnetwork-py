@@ -29,8 +29,8 @@ def normalize_column(df, column):
     )
 
 
-config=RELU.clone()
-config.rate=0.2
+config=TANH.clone()
+config.rate=0.3
 nn = NeuralNet(config)
 # read csv file
 df = pd.read_csv("./data/iris.data", header=None)
@@ -129,7 +129,10 @@ for i in range(0, len(df)):
 
 
 
-learn(nn,data,2000)
+for i in range(0,20):
+  learn(nn,data,200)
+  nn.config.rate*=0.66
+
 
 # all = data#list(range(0, len(data)))
 # random.shuffle(all)

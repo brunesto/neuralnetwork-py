@@ -8,14 +8,15 @@ import matplotlib.pyplot as plt
 def f(x:float)->float:
   # if x>0:
   #    return 2-x
-  return x*x
+  return x*x*x
 
 
 config=RELU.clone()
-config.seed=12
+config.seed=0
 
-config.layer_sizes=[1,10,1]
+config.layer_sizes=[1,20,1]
 config.rate=0.1
+
 nn=NeuralNet(config)
 
 #nn.ws=[[[0.8,0.3]]]
@@ -33,9 +34,11 @@ def plotResults():
 
 plotResults()
 for i in range (0,3):
-  learn(nn,data,40)
+  
+  learn(nn,data,100)
   print("weights:",nn.ws)
   plotResults()
+  config.rate/=2
 
 
 
