@@ -10,9 +10,10 @@
 # done:
 # * forward cost
 # * simple backtracking
+# * classes
 #
 # todos:
-# * organize code in classes
+# 
 #
 # * try on 1 dimensional function, check that it can learn any
 # * try to make it a tiny bit faster (compile?)
@@ -270,7 +271,7 @@ def normalize_column(df, column):
 
 nn=NeuralNet(NeuralNetConfig())
 # read csv file
-df = pd.read_csv("./data/iris.data", header=None)
+df = pd.read_csv("../data/iris.data", header=None)
 
 input_cols = [0, 1, 2, 3]
 output_cols = [5, 6, 7]
@@ -373,7 +374,7 @@ print("train", train)
 print("test", test)
 nn.cost(df, test, input_cols, output_cols)
 
-for x in range(1, 2000):
+for x in range(1, 100):
     sub_trains = train#np.split(np.array(train), 2)
     nn.init_derivatives()
     #for sub_train in sub_trains:
