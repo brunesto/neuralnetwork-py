@@ -30,24 +30,6 @@ import matplotlib.pyplot as plt
 
 random.seed(0)
 
-# config: number of neurons in each layer
-layersizes = [4, 12, 3]
-
-
-# activation function
-def sigma(z):
-    v = math.tanh(z)
-    # v=min(max(z,-1),1)
-    return v
-
-
-# derivative of activation function
-# https://en.wikipedia.org/wiki/Activation_function
-def sigmad(z):
-    s = sigma(z)
-    v = 1 - s * s
-    return v
-
 
 def zeros(s):
   v=[]
@@ -64,28 +46,55 @@ def zeros2d(s1,s2):
 
 
 
-# layers
-ls = []
-for i in range(0, len(layersizes)):
-    ls.append(zeros(layersizes[i]))
-
-# weights
-# ws[0] are the weights to update l[1] from l[0]
-# ws[0][-1] is an extra weight which is the bias
-ws = []
-for li in range(1, len(layersizes)):
-    ws.append(zeros2d(layersizes[li], layersizes[li - 1] + 1))
-
-print(ws[0])
-for wi in range(0, len(ws)):
-    for no in range(0, len(ws[wi])):
-        for ni in range(0, len(ws[wi][no])):
-            ws[wi][no][ni] = random.random() * 2 - 1
+class NeuralNetConfig:
+  # config: number of neurons in each layer
+  layersizes = [4, 12, 3]
+  
+  rate=0.3
 
 
-# compute the activation on lo
-# based on previous layer li and weight wo
-def compute_neuron(li, wo, lo):
+  # activation function
+  def sigma(self,z):
+    v = math.tanh(z)
+    # v=min(max(z,-1),1)
+    return v
+
+
+  # derivative of activation function
+  # https://en.wikipedia.org/wiki/Activation_function
+  def sigmad(self,z):
+    s = self.sigma(z)
+    v = 1 - s * s
+    return v
+
+class NeuralNet:
+  
+  config:NeuralNetConfig
+  # layers
+  ls = []
+  ws = []
+  
+  def __init__(self,config): 
+    self.config=config
+    for i in range(0, len(config.layersizes)):
+      self.ls.append(zeros(config.layersizes[i]))
+
+    # weights
+    # ws[0] are the weights to update l[1] from l[0]
+    # ws[0][-1] is an extra weight which is the bias
+ 
+    for li in range(1, len(config.layersizes)):
+      self.ws.append(zeros2d(config.layersizes[li], config.layersizes[li - 1] + 1))
+
+    for wi in range(0, len(self.ws)):
+      for no in range(0, len(self.ws[wi])):
+          for ni in range(0, len(self.ws[wi][no])):
+              self.ws[wi][no][ni] = random.random() * 2 - 1
+
+
+  # compute the activation on lo
+  # based on previous layer li and weight wo
+  def compute_neuron(self,li, wo, lo):
     z = 0
     ns = len(li)
     for ni in range(0, ns):
@@ -95,31 +104,31 @@ def compute_neuron(li, wo, lo):
     wavg = z / len(wo)
 
     # activation function aka sigma
-    v = sigma(wavg)
+    v = self.config.sigma(wavg)
     return v
 
 
-# compute the layer lo
-def compute_layer(li, wio, lo):
+  # compute the layer lo
+  def compute_layer(self,li, wio, lo):
     # print("compute_layer ",li)
     for no in range(0, len(lo)):
         # print(f"neuron {no}")
-        v = compute_neuron(li, wio[no], lo)
+        v = self.compute_neuron(li, wio[no], lo)
         # print(f"neuron {no} ={v}")
         lo[no] = v
 
 
-# forward
-def compute_network(input):
+  # forward
+  def compute_network(self,input):
     # print("input",input)
-    ls[0] = input
-    for i in range(1, len(layersizes)):
+    self.ls[0] = input
+    for i in range(1, len(self.config.layersizes)):
         # print(f"layer {i}")
-        compute_layer(ls[i - 1], ws[i - 1], ls[i])
-    ls[-1]
+        self.compute_layer(self.ls[i - 1],self. ws[i - 1], self.ls[i])
+    self.ls[-1]
 
 
-def error_function(outputs, expecteds):
+  def error_function(self,outputs, expecteds):
     acc2 = 0
     for i in range(0, len(expecteds)):
         output = outputs[i]
@@ -131,28 +140,124 @@ def error_function(outputs, expecteds):
     return e
 
 
-def compute_error(input, expecteds):
-    compute_network(input)
-    e = error_function(ls[-1], expecteds)
+  def compute_error(self,input, expecteds):
+    self.compute_network(input)
+    e = self.error_function(self.ls[-1], expecteds)
     return e
 
 
-#
-# compute the cost (i.e. avg error on all samples)
-#
-def cost(df, idexes, input_cols, output_cols):
+  #
+  # compute the cost (i.e. avg error on all samples)
+  #
+  def cost(self,df, idexes, input_cols, output_cols):
 
     acc = 0
     if idexes == None:
         idexes = range(0, len(df))
     for i in idexes:
         # print(i)
-        acc += compute_error(
+        acc += self.compute_error(
             list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
         )
 
     e = acc / len(df)
     return e
+
+
+  
+  def init_derivatives(self):
+    # note that the derivative of the error shows the oposite direction of the gradient we want to follow
+    # derivatives of cost over neurons
+    self.dls = []
+    for i in range(0, len(self.config.layersizes)):
+      self.dls.append(zeros(self.config.layersizes[i]))
+
+    # derivative of cost over weights
+    self.dws = []
+    for li in range(1, len(self.config.layersizes)):
+      self.dws.append(zeros2d(self.config.layersizes[li], self.config.layersizes[li - 1] + 1))
+
+    # accumulated derivative after each sample
+    self.adws = []
+    for li in range(1, len(self.config.layersizes)):
+      self.adws.append(zeros2d(self.config.layersizes[li], self.config.layersizes[li - 1] + 1))
+
+    # dh is the number of samples
+    self.dh = 0
+
+
+  def update_backtrack(self,input, expecteds):
+    # L is last layer
+    L = len(self.ls) - 1
+    self.compute_network(input)
+    e = self.error_function(self.ls[-1], expecteds)
+    # print("e",e)
+
+    self.dh = self.dh + 1
+    # partial derivative of C over aLj (aLj: activation of last layer 's neuron j)
+    for j in range(0, len(self.ls[L])):
+        d_cost_aLj = 2 * (self.ls[L][j] - expecteds[j])
+        self.dls[L][j] += d_cost_aLj
+
+    # partial derivative of C over wLjk
+
+    for l in range(L, 0, -1):
+        for j in range(0, len(self.ls[l])):
+            d_aj_z = self.config.sigmad(self.ls[l][j])
+            for k in range(0, len(self.ls[l - 1])):
+                d_z_w = self.ls[l - 1][k]
+                d_cost_w = self.dls[l][j] * d_aj_z * d_z_w
+                self.dws[l - 1][j][k] += d_cost_w
+            # bias
+            d_cost_w =  self.dls[l][j] * d_aj_z * 1  # 1 for bias
+            self.dws[l - 1][j][-1] += d_cost_w
+
+        if l > 0:
+            # partial derivative of C over neurons for previous layer
+            for k in range(0, len(self.ls[l - 1])):
+                for j in range(0, len(self.ls[l])):
+                    dprev = self.dls[l][j]
+                    dw = self.ws[l - 1][j][k]
+                    da = self.config.sigmad(self.ls[l - 1][k])
+                    self.dls[l - 1][k] += (dprev * dw * da) / len(self.ls[l])
+
+
+  def reset_derivatives(self):
+    # print ("dh:",dh)
+    for li in range(1, len(self.config.layersizes)):
+        for ni in range(0, len(self.ls[li])):
+            self.dls[li][ni] = 0
+
+    for wi in range(0, len(self.ws)):
+        for no in range(0, len(self.ws[wi])):
+            for ni in range(0, len(self.ws[wi][no])):
+                self.dws[wi][no][ni] = 0
+
+
+  def reset_acc_derivatives(self):
+    global dh
+    dh = 0
+    for wi in range(0, len(self.ws)):
+        for no in range(0, len(self.ws[wi])):
+            for ni in range(0, len(self.ws[wi][no])):
+                self.adws[wi][no][ni] = 0
+
+
+  def apply_acc_derivatives(self):
+    for l in range(1, len(self.config.layersizes)):
+        for j in range(0, len(self.ls[l])):
+            for k in range(0, len(self.adws[l - 1][j])):  # also bias
+                self.ws[l - 1][j][k] -= self.config.rate * self.adws[l - 1][j][k] / self.dh
+
+
+  def acc_derivatives(self):
+    for l in range(1, len(self.config.layersizes)):
+        for j in range(0, len(self.ls[l])):
+            for k in range(0, len(self.dws[l - 1][j])):  # also bias
+                self.adws[l - 1][j][k] += self.dws[l - 1][j][k]
+
+
+
 
 
 # -- data --
@@ -162,6 +267,8 @@ def normalize_column(df, column):
     )
 
 
+
+nn=NeuralNet(NeuralNetConfig())
 # read csv file
 df = pd.read_csv("./data/iris.data", header=None)
 
@@ -169,7 +276,6 @@ input_cols = [0, 1, 2, 3]
 output_cols = [5, 6, 7]
 
 
-print(ws)
 # normalize quantities
 for column in input_cols:
     normalize_column(df, column)
@@ -192,99 +298,6 @@ for category in list(pd.Categorical(df[4]).categories):
 
 
 # backtracking
-
-# L is last layer
-L = len(ls) - 1
-
-# note that the derivative of the error shows the oposite direction of the gradient we want to follow
-# derivatives of cost over neurons
-dls = []
-for i in range(0, len(layersizes)):
-    dls.append(zeros(layersizes[i]))
-
-# derivative of cost over weights
-dws = []
-for li in range(1, len(layersizes)):
-    dws.append(zeros2d(layersizes[li], layersizes[li - 1] + 1))
-
-# accumulated derivative after each sample
-adws = []
-for li in range(1, len(layersizes)):
-    adws.append(zeros2d(layersizes[li], layersizes[li - 1] + 1))
-
-# dh is the number of samples
-dh = 0
-
-
-def update_backtrack(input, expecteds):
-
-    compute_network(input)
-    e = error_function(ls[-1], expecteds)
-    # print("e",e)
-
-    global dh
-    dh = dh + 1
-    # partial derivative of C over aLj (aLj: activation of last layer 's neuron j)
-    for j in range(0, len(ls[L])):
-        d_cost_aLj = 2 * (ls[L][j] - expecteds[j])
-        dls[L][j] += d_cost_aLj
-
-    # partial derivative of C over wLjk
-
-    for l in range(L, 0, -1):
-        for j in range(0, len(ls[l])):
-            d_aj_z = sigmad(ls[l][j])
-            for k in range(0, len(ls[l - 1])):
-                d_z_w = ls[l - 1][k]
-                d_cost_w = dls[l][j] * d_aj_z * d_z_w
-                dws[l - 1][j][k] += d_cost_w
-            # bias
-            d_cost_w = dls[l][j] * d_aj_z * 1  # 1 for bias
-            dws[l - 1][j][-1] += d_cost_w
-
-        if l > 0:
-            # partial derivative of C over neurons for previous layer
-            for k in range(0, len(ls[l - 1])):
-                for j in range(0, len(ls[l])):
-                    dprev = dls[l][j]
-                    dw = ws[l - 1][j][k]
-                    da = sigmad(ls[l - 1][k])
-                    dls[l - 1][k] += (dprev * dw * da) / len(ls[l])
-
-
-def reset_derivatives():
-    # print ("dh:",dh)
-    for li in range(1, len(layersizes)):
-        for ni in range(0, len(ls[li])):
-            dls[li][ni] = 0
-
-    for wi in range(0, len(ws)):
-        for no in range(0, len(ws[wi])):
-            for ni in range(0, len(ws[wi][no])):
-                dws[wi][no][ni] = 0
-
-
-def reset_acc_derivatives():
-    global dh
-    dh = 0
-    for wi in range(0, len(ws)):
-        for no in range(0, len(ws[wi])):
-            for ni in range(0, len(ws[wi][no])):
-                adws[wi][no][ni] = 0
-
-
-def apply_acc_derivatives():
-    for l in range(1, len(layersizes)):
-        for j in range(0, len(ls[l])):
-            for k in range(0, len(adws[l - 1][j])):  # also bias
-                ws[l - 1][j][k] -= 0.3 * adws[l - 1][j][k] / dh
-
-
-def acc_derivatives():
-    for l in range(1, len(layersizes)):
-        for j in range(0, len(ls[l])):
-            for k in range(0, len(dws[l - 1][j])):  # also bias
-                adws[l - 1][j][k] += dws[l - 1][j][k]
 
 
 # preload weights from a previous session
@@ -358,27 +371,28 @@ train = all[:splitAt]
 test = all[splitAt:]
 print("train", train)
 print("test", test)
-cost(df, test, input_cols, output_cols)
+nn.cost(df, test, input_cols, output_cols)
 
 for x in range(1, 2000):
     sub_trains = train#np.split(np.array(train), 2)
+    nn.init_derivatives()
     #for sub_train in sub_trains:
     for i in sub_trains:
-            reset_derivatives()
-            update_backtrack(
+            nn.reset_derivatives()
+            nn.update_backtrack(
                 list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
             )
             # print("dh:",dh)
-            acc_derivatives()
+            nn.acc_derivatives()
 
             # print("dws:",adws)
             # print("...")
-    apply_acc_derivatives()
-    reset_acc_derivatives()
-    e=cost(df, test, input_cols, output_cols)
+    nn.apply_acc_derivatives()
+    nn.reset_acc_derivatives()
+    e=nn.cost(df, test, input_cols, output_cols)
     print("x:",x," cost:", e)
     
     
     
 
-print("ws", ws)
+print("ws", nn.ws)
