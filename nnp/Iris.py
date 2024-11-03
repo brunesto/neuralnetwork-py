@@ -113,10 +113,10 @@ nn.cost(df, test, input_cols, output_cols)
 
 for x in range(1, 100):
     sub_trains = train  # np.split(np.array(train), 2)
-    nn.init_derivatives()
+
     # for sub_train in sub_trains:
     for i in sub_trains:
-        nn.reset_derivatives()
+
         nn.update_backtrack(
             list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
         )
@@ -125,9 +125,9 @@ for x in range(1, 100):
 
         # print("dws:",adws)
         # print("...")
-    nn.acc_derivatives()
-    nn.apply_acc_derivatives()
-    nn.reset_acc_derivatives()
+    #nn.acc_derivatives()
+    nn.apply_dws()
+    nn.reset_dws()
     e = nn.cost(df, test, input_cols, output_cols)
     print("x:", x, " cost:", e)
 

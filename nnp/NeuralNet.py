@@ -101,11 +101,11 @@ class NeuralNet:
                 for ni in range(0, len(self.ws[wi][no])):
                     self.ws[wi][no][ni] = random.random() * 2 - 1
 
-        self.dh = None
+        self.dh = 0
         self.dls = None
         self.adws = None
         self.dws = None
-        #self.init_derivatives()
+        self.init_derivatives()
 
     # compute the activation on lo
     # based on previous layer li and weight wo
@@ -175,12 +175,11 @@ class NeuralNet:
             self.dws.append(zeros2d(self.config.layer_sizes[li], self.config.layer_sizes[li - 1] + 1))
 
         # accumulated derivative after each sample
-        self.adws = []
-        for li in range(1, len(self.config.layer_sizes)):
-            self.adws.append(zeros2d(self.config.layer_sizes[li], self.config.layer_sizes[li - 1] + 1))
+        #self.adws = []
+        #for li in range(1, len(self.config.layer_sizes)):
+        #    self.adws.append(zeros2d(self.config.layer_sizes[li], self.config.layer_sizes[li - 1] + 1))
 
-        # dh is the number of samples
-        self.dh = 0
+
 
     def update_backtrack(self, inputs, expecteds):
         # L is last layer
@@ -189,6 +188,7 @@ class NeuralNet:
         e = error_function(self.ls[-1], expecteds)
         # print("e",e)
 
+        self.reset_dls()
         self.dh = self.dh + 1
         # partial derivative of C over aLj (aLj: activation of last layer 's neuron j)
         for j in range(0, len(self.ls[L])):
@@ -219,33 +219,31 @@ class NeuralNet:
                         da = self.config.sigmad(self.ls[l - 1][k])
                         self.dls[l - 1][k] += (dprev * dw * da) / len(self.ls[l])
 
-    def reset_derivatives(self):
+    # reset the neuron activation derivatives
+    # this must be done before each individual sampling
+    def reset_dls(self):
         # print ("dh:",dh)
         for li in range(1, len(self.config.layer_sizes)):
             for ni in range(0, len(self.ls[li])):
                 self.dls[li][ni] = 0
 
-        #for wi in range(0, len(self.ws)):
-        #    for no in range(0, len(self.ws[wi])):
-        #        for ni in range(0, len(self.ws[wi][no])):
-        #            self.dws[wi][no][ni] = 0
-
-    def reset_acc_derivatives(self):
+    # reset dws, the weight derivatives
+    # this can carry on accumulated values
+    # hits is self.dh
+    def reset_dws(self):
         global dh
         dh = 0
         for wi in range(0, len(self.ws)):
             for no in range(0, len(self.ws[wi])):
                 for ni in range(0, len(self.ws[wi][no])):
-                    self.adws[wi][no][ni] = 0
+                    self.dws[wi][no][ni] = 0
+        # dh is the number of samples
+        self.dh = 0
 
-    def apply_acc_derivatives(self):
-        for l in range(1, len(self.config.layer_sizes)):
-            for j in range(0, len(self.ls[l])):
-                for k in range(0, len(self.adws[l - 1][j])):  # also bias
-                    self.ws[l - 1][j][k] -= self.config.rate * self.adws[l - 1][j][k] / self.dh
-
-    def acc_derivatives(self):
+    def apply_dws(self):
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
                 for k in range(0, len(self.dws[l - 1][j])):  # also bias
-                    self.adws[l - 1][j][k] += self.dws[l - 1][j][k]
+                    self.ws[l - 1][j][k] -= self.config.rate * self.dws[l - 1][j][k] / self.dh
+
+
