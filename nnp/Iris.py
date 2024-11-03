@@ -121,10 +121,11 @@ for x in range(1, 100):
             list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
         )
         # print("dh:",dh)
-        nn.acc_derivatives()
+
 
         # print("dws:",adws)
         # print("...")
+    nn.acc_derivatives()
     nn.apply_acc_derivatives()
     nn.reset_acc_derivatives()
     e = nn.cost(df, test, input_cols, output_cols)

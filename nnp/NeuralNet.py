@@ -86,6 +86,7 @@ class NeuralNet:
     ws = []
 
     def __init__(self, config):
+
         self.config = config
         for i in range(0, len(config.layer_sizes)):
             self.ls.append(zeros(config.layer_sizes[i]))
@@ -99,6 +100,12 @@ class NeuralNet:
             for no in range(0, len(self.ws[wi])):
                 for ni in range(0, len(self.ws[wi][no])):
                     self.ws[wi][no][ni] = random.random() * 2 - 1
+
+        self.dh = None
+        self.dls = None
+        self.adws = None
+        self.dws = None
+        #self.init_derivatives()
 
     # compute the activation on lo
     # based on previous layer li and weight wo
@@ -156,7 +163,7 @@ class NeuralNet:
         return e
 
     def init_derivatives(self):
-        # note that the derivative of the error shows the oposite direction of the gradient we want to follow
+        # note that the derivative of the error shows the opposite direction of the gradient we want to follow
         # derivatives of cost over neurons
         self.dls = []
         for i in range(0, len(self.config.layer_sizes)):
@@ -175,10 +182,10 @@ class NeuralNet:
         # dh is the number of samples
         self.dh = 0
 
-    def update_backtrack(self, input, expecteds):
+    def update_backtrack(self, inputs, expecteds):
         # L is last layer
         L = len(self.ls) - 1
-        self.compute_network(input)
+        self.compute_network(inputs)
         e = error_function(self.ls[-1], expecteds)
         # print("e",e)
 
@@ -188,18 +195,20 @@ class NeuralNet:
             d_cost_aLj = 2 * (self.ls[L][j] - expecteds[j])
             self.dls[L][j] += d_cost_aLj
 
-        # partial derivative of C over wLjk
+        # partial derivative of C over w[L-1]jk and b[L-1]j
 
         for l in range(L, 0, -1):
             for j in range(0, len(self.ls[l])):
-                d_aj_z = self.config.sigmad(self.ls[l][j])
+                d_a_z = self.config.sigmad(self.ls[l][j])
+                d_cost_a = self.dls[l][j]
+                # weights
                 for k in range(0, len(self.ls[l - 1])):
                     d_z_w = self.ls[l - 1][k]
-                    d_cost_w = self.dls[l][j] * d_aj_z * d_z_w
+                    d_cost_w =  d_cost_a* d_a_z * d_z_w
                     self.dws[l - 1][j][k] += d_cost_w
                 # bias
-                d_cost_w = self.dls[l][j] * d_aj_z * 1  # 1 for bias
-                self.dws[l - 1][j][-1] += d_cost_w
+                d_cost_b = self.dls[l][j] * d_a_z
+                self.dws[l - 1][j][-1] += d_cost_b
 
             if l > 0:
                 # partial derivative of C over neurons for previous layer
@@ -216,10 +225,10 @@ class NeuralNet:
             for ni in range(0, len(self.ls[li])):
                 self.dls[li][ni] = 0
 
-        for wi in range(0, len(self.ws)):
-            for no in range(0, len(self.ws[wi])):
-                for ni in range(0, len(self.ws[wi][no])):
-                    self.dws[wi][no][ni] = 0
+        #for wi in range(0, len(self.ws)):
+        #    for no in range(0, len(self.ws[wi])):
+        #        for ni in range(0, len(self.ws[wi][no])):
+        #            self.dws[wi][no][ni] = 0
 
     def reset_acc_derivatives(self):
         global dh
