@@ -51,6 +51,8 @@ class NeuralNetConfig:
     # seed for populating initial weights
     seed = 0
 
+    normalize_z=True 
+
     # activation function
     def sigma(self, z: float) -> float:
         v = math.tanh(z)
@@ -121,8 +123,9 @@ class NeuralNet:
         for wi in range(0, len(self.ws)):
             for no in range(0, len(self.ws[wi])):
                 for ni in range(0, len(self.ws[wi][no])):
-                    self.ws[wi][no][ni] = random.random()-0.5
-                    #(ni/len(self.ws[wi][no]))-0.5
+                    w=(random.random()-0.5)
+                    #w=(ni/len(self.ws[wi][no]))-0.5
+                    self.ws[wi][no][ni] = w
         print(self.ws)
         self.dh = 0
         self.dls = None
@@ -140,20 +143,22 @@ class NeuralNet:
             z += li[ni] * wo[ni]
         z += wo[ns]  # w[-1] is the bias
 
-        wavg = z #/ len(wo)
+        wavg = z 
+        if self.config.normalize_z:
+            wavg/= len(wo)
 
         # activation function aka sigma
-        v = self.config.sigma(wavg)
-        return v
+        a = self.config.sigma(wavg)
+        return a
 
     # compute the layer lo
     def compute_layer(self, li, wio, lo):
         # print("compute_layer ",li)
         for no in range(0, len(lo)):
             # print(f"neuron {no}")
-            v = self.compute_neuron(li, wio[no])
+            a = self.compute_neuron(li, wio[no])
             # print(f"neuron {no} ={v}")
-            lo[no] = v
+            lo[no] = a
 
     # forward computation
     def compute_network(self, inputs):
@@ -223,6 +228,8 @@ class NeuralNet:
                 # weights
                 for k in range(0, len(self.ls[l - 1])):
                     d_z_w = self.ls[l - 1][k]
+                    if self.config.normalize_z:
+                        d_z_w /= len(self.ls[l - 1])
                     d_cost_w = d_cost_a * d_a_z * d_z_w
                     self.dws[l - 1][j][k] += d_cost_w
                 # bias
@@ -233,17 +240,20 @@ class NeuralNet:
                 # partial derivative of C over neurons for previous layer
                 for k in range(0, len(self.ls[l - 1])):
                     for j in range(0, len(self.ls[l])):
-                        dprev = self.dls[l][j]
-                        dw = self.ws[l - 1][j][k]
-                        da = self.config.sigmad(self.ls[l - 1][k])
-                        self.dls[l - 1][k] += (dprev * dw * da) / len(self.ls[l])
+                        d_z_preva = self.ws[l - 1][j][k]
+                        d_a_z = self.config.sigmad(self.ls[l - 1][k]) # bug here? should be sigmad(z) not sigmad(a) 
+                        d_cost_a = self.dls[l][j]
+                        d_cost_preva=(d_z_preva*d_a_z*d_cost_a) #/ len(self.ls[l])
+                        self.dls[l - 1][k] += d_cost_a
 
     def apply_dws(self):
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
                 for k in range(0, len(self.dws[l - 1][j])):  # also bias
                     gradient=self.config.rate * self.dws[l - 1][j][k] / self.dh
-                    self.ws[l - 1][j][k] +=  -math.sqrt(gradient) if (gradient>0) else math.sqrt(-gradient)
+                    #print(gradient)
+                    gradient=-math.sqrt(gradient) if (gradient>0) else math.sqrt(-gradient)
+                    self.ws[l - 1][j][k] += gradient
 
 
 
