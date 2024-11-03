@@ -79,6 +79,8 @@ TANH.sigma=lambda x:math.tanh(x)
 def tanhd(x):
     s = math.tanh(x)
     v = 1 - s * s
+    return v
+
 TANH.sigmad=tanhd
     
 
