@@ -1,6 +1,26 @@
+# test against the iris database
+# https://en.wikipedia.org/wiki/Iris_flower_data_set
+
 import pandas as pd
 from NeuralNet import *
 
+
+# #
+# # compute the cost (i.e. avg error on all samples)
+# #
+# def cost(nn, df, idexes, input_cols, output_cols):
+#
+#     acc = 0
+#     if idexes is None:
+#         idexes = range(0, len(df))
+#     for i in idexes:
+#         # print(i)
+#         acc += nn.compute_error(
+#             list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
+#         )
+#
+#     e = acc / len(df)
+#     return e
 
 # -- data --
 def normalize_column(df, column):
@@ -11,7 +31,7 @@ def normalize_column(df, column):
 
 nn = NeuralNet(NeuralNetConfig())
 # read csv file
-df = pd.read_csv("../data/iris.data", header=None)
+df = pd.read_csv("./data/iris.data", header=None)
 
 input_cols = [0, 1, 2, 3]
 output_cols = [5, 6, 7]
@@ -101,34 +121,42 @@ wsXXX = [
         2.28900566,
     ],
 ]
-
-all = list(range(0, len(df)))
-random.shuffle(all)
-splitAt = int(len(df) * 0.9)
-train = all[:splitAt]
-test = all[splitAt:]
-print("train", train)
-print("test", test)
-nn.cost(df, test, input_cols, output_cols)
-
-for x in range(1, 100):
-    sub_trains = train  # np.split(np.array(train), 2)
-
-    # for sub_train in sub_trains:
-    for i in sub_trains:
-
-        nn.update_backtrack(
-            list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
-        )
-        # print("dh:",dh)
+data=[]
+for i in range(0, len(df)):
+    data.append((list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])));
 
 
-        # print("dws:",adws)
-        # print("...")
-    #nn.acc_derivatives()
-    nn.apply_dws()
-    nn.reset_dws()
-    e = nn.cost(df, test, input_cols, output_cols)
-    print("x:", x, " cost:", e)
 
-print("ws", nn.ws)
+learn(nn,data,100)
+
+# all = data#list(range(0, len(data)))
+# random.shuffle(all)
+# splitAt = int(len(df) * 0.9)
+# train = all[:splitAt]
+# test = all[splitAt:]
+# print("train", train)
+# print("test", test)
+# nn.cost(test)
+
+# for x in range(1, 2000):
+#     sub_trains = train  # np.split(np.array(train), 2)
+
+#     # for sub_train in sub_trains:
+#     for row in sub_trains:
+
+#         nn.update_backtrack(
+#             #list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
+#            row[0],row[1]
+#         )
+#         # print("dh:",dh)
+
+
+#         # print("dws:",adws)
+#         # print("...")
+#     #nn.acc_derivatives()
+#     nn.apply_dws()
+#     nn.reset_dws()
+#     e = nn.cost(test)
+#     print("x:", x, " cost:", e)
+
+# print("ws", nn.ws)

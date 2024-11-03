@@ -25,6 +25,7 @@
 
 import math
 import random
+import copy
 
 
 def zeros(s):
@@ -59,10 +60,22 @@ class NeuralNetConfig:
     # derivative of activation function
     # https://en.wikipedia.org/wiki/Activation_function
     def sigmad(self, z: float) -> float:
-        s = self.sigma(z)
+        s = math.tanh(z)
         v = 1 - s * s
         return v
+        
+    def clone(self):
+        return copy.deepcopy(self)
+    
+TANH=NeuralNetConfig()
 
+LINEAR=NeuralNetConfig()
+LINEAR.sigma=lambda x:x
+LINEAR.sigmad=lambda x:1
+
+RELU=NeuralNetConfig()
+RELU.sigma=lambda x:0.1*x if (x<0) else x
+RELU.sigmad=lambda x:0.1 if (x<0) else 1
 # error functions
 # since these are not expected to change it is not in config
 
@@ -79,8 +92,8 @@ def error_function_acc(outputs, expecteds):
     acc2 = 0
     for i in range(0, len(expecteds)):
         acc2 += error_function(outputs[i], expecteds[i])
-    # question: is it necessary to sqrt?
-    e = acc2  # math.sqrt(acc2)
+    
+    e = acc2  
     # print("outputs",outputs," expecteds",expecteds, " error:",e)
     return e
 
@@ -108,8 +121,9 @@ class NeuralNet:
         for wi in range(0, len(self.ws)):
             for no in range(0, len(self.ws[wi])):
                 for ni in range(0, len(self.ws[wi][no])):
-                    self.ws[wi][no][ni] = random.random() * 2 - 1
-
+                    self.ws[wi][no][ni] = random.random()-0.5
+                    #(ni/len(self.ws[wi][no]))-0.5
+        print(self.ws)
         self.dh = 0
         self.dls = None
         self.adws = None
@@ -119,14 +133,14 @@ class NeuralNet:
 
     # compute the activation on lo
     # based on previous layer li and weight wo
-    def compute_neuron(self, li, wo, lo):
+    def compute_neuron(self, li, wo):
         z = 0
         ns = len(li)
         for ni in range(0, ns):
             z += li[ni] * wo[ni]
         z += wo[ns]  # w[-1] is the bias
 
-        wavg = z / len(wo)
+        wavg = z #/ len(wo)
 
         # activation function aka sigma
         v = self.config.sigma(wavg)
@@ -137,7 +151,7 @@ class NeuralNet:
         # print("compute_layer ",li)
         for no in range(0, len(lo)):
             # print(f"neuron {no}")
-            v = self.compute_neuron(li, wio[no], lo)
+            v = self.compute_neuron(li, wio[no])
             # print(f"neuron {no} ={v}")
             lo[no] = v
 
@@ -156,27 +170,24 @@ class NeuralNet:
         return e
 
     #
-    # compute the cost (i.e. avg error on all samples)
+    # compute the cost over many samples (i.e. avg error on all samples)
     #
-    def cost(self, df, idexes, input_cols, output_cols):
-
+    def cost(self, samples):
         acc = 0
-        if idexes is None:
-            idexes = range(0, len(df))
-        for i in idexes:
+        results=[]
+        for row in samples:
             # print(i)
-            acc += self.compute_error(
-                list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
-            )
-
-        e = acc / len(df)
-        return e
+            acc += self.compute_error(row[0], row[1])
+            results.append(self.ls[-1][:])
+        e = acc / len(samples)
+        return (e,results)
 
     def reset_dls(self):
 
         # dls is the derivatives of cost over neurons, needs to be reset after each sample
         self.dls = []
-        for i in range(0, len(self.config.layer_sizes)):
+        self.dls.append(None) # we are not interested in the derivative of the cost over input layer
+        for i in range(1, len(self.config.layer_sizes)):
             self.dls.append(zeros(self.config.layer_sizes[i]))
 
     def reset_dws(self):
@@ -218,7 +229,7 @@ class NeuralNet:
                 d_cost_b = self.dls[l][j] * d_a_z
                 self.dws[l - 1][j][-1] += d_cost_b
 
-            if l > 0:
+            if l > 1:
                 # partial derivative of C over neurons for previous layer
                 for k in range(0, len(self.ls[l - 1])):
                     for j in range(0, len(self.ls[l])):
@@ -231,4 +242,36 @@ class NeuralNet:
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
                 for k in range(0, len(self.dws[l - 1][j])):  # also bias
-                    self.ws[l - 1][j][k] -= self.config.rate * self.dws[l - 1][j][k] / self.dh
+                    gradient=self.config.rate * self.dws[l - 1][j][k] / self.dh
+                    self.ws[l - 1][j][k] +=  -math.sqrt(gradient) if (gradient>0) else math.sqrt(-gradient)
+
+
+
+
+def learn(nn,data,iterations):
+  #random.seed(0)
+  data=data[:]
+  random.shuffle(data)
+
+  splitAt = int(len(data) * 1)
+  train = data[:splitAt]
+  test = data[splitAt:]
+  #print("train", train)
+  #print("test", test)
+
+  #print(" cost:", e)
+  e = nn.cost(data)[0]
+  print("itartion init cost:", e)
+  for x in range(1, iterations):
+      # for sub_train in sub_trains:
+      for row in train:
+          nn.update_backtrack(row[0],row[1])
+      #print ("ws",nn.ws)
+      #print ("dh",nn.dh,"dws:",nn.dws)
+
+      nn.apply_dws()
+      nn.reset_dws()
+      e = nn.cost(data)[0]
+      print("itartion:", x, " cost:", e)
+
+  #print("ws", nn.ws)
