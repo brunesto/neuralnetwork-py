@@ -5,14 +5,14 @@
 #
 #  3Blue1Brown, series on neural networks  https://www.youtube.com/watch?v=Ilg3gGewQ5U
 #
-#  Also a bit of proper AI help comes in handy: there was a bug in the derivation of bias in the 1st version of backtracking, ChatGPT found it 
+#  Also a bit of proper AI help comes in handy: there was a bug in the derivation of bias in the 1st version of backtracking, ChatGPT found it
 #
 # done:
-# * forward cost 
+# * forward cost
 # * simple backtracking
 #
-# todos: 
-# * organize code in classes 
+# todos:
+# * organize code in classes
 #
 # * try on 1 dimensional function, check that it can learn any
 # * try to make it a tiny bit faster (compile?)
@@ -22,9 +22,8 @@
 #
 
 
-
 import pandas as pd
-import numpy as np
+#import numpy as np
 import math
 import random
 import matplotlib.pyplot as plt
@@ -50,17 +49,32 @@ def sigmad(z):
     return v
 
 
+def zeros(s):
+  v=[]
+  for i in range(0,s):
+    v.append(0)
+  return v
+
+
+def zeros2d(s1,s2):
+  v=[]
+  for i in range(0,s1):
+    v.append(zeros(s2))
+  return v
+
+
+
 # layers
 ls = []
 for i in range(0, len(layersizes)):
-    ls.append(np.zeros(layersizes[i]))
+    ls.append(zeros(layersizes[i]))
 
 # weights
 # ws[0] are the weights to update l[1] from l[0]
 # ws[0][-1] is an extra weight which is the bias
 ws = []
 for li in range(1, len(layersizes)):
-    ws.append(np.zeros((layersizes[li], layersizes[li - 1] + 1)))
+    ws.append(zeros2d(layersizes[li], layersizes[li - 1] + 1))
 
 print(ws[0])
 for wi in range(0, len(ws)):
@@ -126,17 +140,19 @@ def compute_error(input, expecteds):
 #
 # compute the cost (i.e. avg error on all samples)
 #
-def cost(df, input_cols, output_cols):
+def cost(df, idexes, input_cols, output_cols):
 
     acc = 0
-    for i in range(0, len(df)):
+    if idexes == None:
+        idexes = range(0, len(df))
+    for i in idexes:
         # print(i)
         acc += compute_error(
             list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
         )
 
     e = acc / len(df)
-    print("cost:", e)
+    return e
 
 
 # -- data --
@@ -184,17 +200,17 @@ L = len(ls) - 1
 # derivatives of cost over neurons
 dls = []
 for i in range(0, len(layersizes)):
-    dls.append(np.zeros(layersizes[i]))
+    dls.append(zeros(layersizes[i]))
 
 # derivative of cost over weights
 dws = []
 for li in range(1, len(layersizes)):
-    dws.append(np.zeros((layersizes[li], layersizes[li - 1] + 1)))
+    dws.append(zeros2d(layersizes[li], layersizes[li - 1] + 1))
 
 # accumulated derivative after each sample
 adws = []
 for li in range(1, len(layersizes)):
-    adws.append(np.zeros((layersizes[li], layersizes[li - 1] + 1)))
+    adws.append(zeros2d(layersizes[li], layersizes[li - 1] + 1))
 
 # dh is the number of samples
 dh = 0
@@ -271,9 +287,8 @@ def acc_derivatives():
                 adws[l - 1][j][k] += dws[l - 1][j][k]
 
 
-ws = [
-    np.array(
-        [
+# preload weights from a previous session
+wsXXX = [
             [2.8508284, 4.35413245, 1.51582444, 1.41718171, 6.66555368],
             [0.40836173, 3.90101729, 0.73337858, 2.46991725, 3.92161551],
             [1.06035039, 5.23707322, -0.3311598, 2.7290285, 3.84256655],
@@ -286,10 +301,7 @@ ws = [
             [5.89228978, -5.74234178, 10.87857293, 11.05346111, -3.88841767],
             [-3.49149351, -9.64028735, 21.44740345, 23.36549073, -23.64950108],
             [7.96920738, -6.90856132, 12.7908494, 12.88749598, -5.38595298],
-        ]
-    ),
-    np.array(
-        [
+        ] , [
             [
                 4.40027903,
                 2.85790664,
@@ -336,26 +348,37 @@ ws = [
                 2.28900566,
             ],
         ]
-    ),
-]
 
 
-cost(df, input_cols, output_cols)
 
+all = list(range(0, len(df)))
+random.shuffle(all)
+splitAt = int(len(df) * 0.9)
+train = all[:splitAt]
+test = all[splitAt:]
+print("train", train)
+print("test", test)
+cost(df, test, input_cols, output_cols)
 
-for x in range(1, 3000):
-    for i in range(0, len(df)):
-        reset_derivatives()
-        update_backtrack(list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols]))
-        # print("dh:",dh)
-        acc_derivatives()
+for x in range(1, 2000):
+    sub_trains = train#np.split(np.array(train), 2)
+    #for sub_train in sub_trains:
+    for i in sub_trains:
+            reset_derivatives()
+            update_backtrack(
+                list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])
+            )
+            # print("dh:",dh)
+            acc_derivatives()
 
-        # print("dws:",adws)
-        # print("...")
-
+            # print("dws:",adws)
+            # print("...")
     apply_acc_derivatives()
     reset_acc_derivatives()
-
-    cost(df, input_cols, output_cols)
+    e=cost(df, test, input_cols, output_cols)
+    print("x:",x," cost:", e)
+    
+    
+    
 
 print("ws", ws)
