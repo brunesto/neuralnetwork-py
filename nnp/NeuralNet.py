@@ -63,13 +63,22 @@ class NeuralNetConfig:
         v = 1 - s * s
         return v
 
+# error functions
+# since these are not expected to change it is not in config
 
-def error_function(outputs, expecteds):
+# single output neuron error function
+def error_function(output1, expected1):
+   return (output1 - expected1) * (output1 - expected1)
+
+# single output neuron error function derivative
+def error_functiond(output1, expected1):
+   return 2*(output1 - expected1)
+
+# output layer error
+def error_function_acc(outputs, expecteds):
     acc2 = 0
     for i in range(0, len(expecteds)):
-        output = outputs[i]
-        expected = expecteds[i]
-        acc2 += (output - expected) * (output - expected)
+        acc2 += error_function(outputs[i], expecteds[i])
     # question: is it necessary to sqrt?
     e = acc2  # math.sqrt(acc2)
     # print("outputs",outputs," expecteds",expecteds, " error:",e)
@@ -77,20 +86,20 @@ def error_function(outputs, expecteds):
 
 
 class NeuralNet:
-    config: NeuralNetConfig
-    # layers
-    ls = []
-    # weights
-    # ws[0] are the weights to update l[1] from l[0]
-    # ws[0][-1] is an extra weight which is the bias
-    ws = []
 
     def __init__(self, config):
 
         self.config = config
+
+        # layers
+        self.ls = []
         for i in range(0, len(config.layer_sizes)):
             self.ls.append(zeros(config.layer_sizes[i]))
 
+        # weights
+        # ws[0] are the weights to update l[1] from l[0]
+        # ws[0][-1] is an extra weight which is the bias
+        self.ws = []
         for li in range(1, len(config.layer_sizes)):
             self.ws.append(zeros2d(config.layer_sizes[li], config.layer_sizes[li - 1] + 1))
 
@@ -105,7 +114,8 @@ class NeuralNet:
         self.dls = None
         self.adws = None
         self.dws = None
-        self.init_derivatives()
+        self.reset_dls()
+        self.reset_dws()
 
     # compute the activation on lo
     # based on previous layer li and weight wo
@@ -142,7 +152,7 @@ class NeuralNet:
 
     def compute_error(self, inputs, expecteds):
         self.compute_network(inputs)
-        e = error_function(self.ls[-1], expecteds)
+        e = error_function_acc(self.ls[-1], expecteds)
         return e
 
     #
@@ -162,37 +172,35 @@ class NeuralNet:
         e = acc / len(df)
         return e
 
-    def init_derivatives(self):
-        # note that the derivative of the error shows the opposite direction of the gradient we want to follow
-        # derivatives of cost over neurons
+    def reset_dls(self):
+
+        # dls is the derivatives of cost over neurons, needs to be reset after each sample
         self.dls = []
         for i in range(0, len(self.config.layer_sizes)):
             self.dls.append(zeros(self.config.layer_sizes[i]))
 
+    def reset_dws(self):
         # derivative of cost over weights
+        # accumulated derivative
+        # note that the derivative of the error shows the opposite direction of the gradient we want to follow
         self.dws = []
         for li in range(1, len(self.config.layer_sizes)):
             self.dws.append(zeros2d(self.config.layer_sizes[li], self.config.layer_sizes[li - 1] + 1))
-
-        # accumulated derivative after each sample
-        #self.adws = []
-        #for li in range(1, len(self.config.layer_sizes)):
-        #    self.adws.append(zeros2d(self.config.layer_sizes[li], self.config.layer_sizes[li - 1] + 1))
-
-
+        # dh is the number of samples
+        self.dh = 0
 
     def update_backtrack(self, inputs, expecteds):
         # L is last layer
         L = len(self.ls) - 1
         self.compute_network(inputs)
-        e = error_function(self.ls[-1], expecteds)
+        e = error_function_acc(self.ls[-1], expecteds)
         # print("e",e)
 
         self.reset_dls()
         self.dh = self.dh + 1
         # partial derivative of C over aLj (aLj: activation of last layer 's neuron j)
         for j in range(0, len(self.ls[L])):
-            d_cost_aLj = 2 * (self.ls[L][j] - expecteds[j])
+            d_cost_aLj = error_functiond(self.ls[L][j], expecteds[j])
             self.dls[L][j] += d_cost_aLj
 
         # partial derivative of C over w[L-1]jk and b[L-1]j
@@ -204,7 +212,7 @@ class NeuralNet:
                 # weights
                 for k in range(0, len(self.ls[l - 1])):
                     d_z_w = self.ls[l - 1][k]
-                    d_cost_w =  d_cost_a* d_a_z * d_z_w
+                    d_cost_w = d_cost_a * d_a_z * d_z_w
                     self.dws[l - 1][j][k] += d_cost_w
                 # bias
                 d_cost_b = self.dls[l][j] * d_a_z
@@ -219,31 +227,8 @@ class NeuralNet:
                         da = self.config.sigmad(self.ls[l - 1][k])
                         self.dls[l - 1][k] += (dprev * dw * da) / len(self.ls[l])
 
-    # reset the neuron activation derivatives
-    # this must be done before each individual sampling
-    def reset_dls(self):
-        # print ("dh:",dh)
-        for li in range(1, len(self.config.layer_sizes)):
-            for ni in range(0, len(self.ls[li])):
-                self.dls[li][ni] = 0
-
-    # reset dws, the weight derivatives
-    # this can carry on accumulated values
-    # hits is self.dh
-    def reset_dws(self):
-        global dh
-        dh = 0
-        for wi in range(0, len(self.ws)):
-            for no in range(0, len(self.ws[wi])):
-                for ni in range(0, len(self.ws[wi][no])):
-                    self.dws[wi][no][ni] = 0
-        # dh is the number of samples
-        self.dh = 0
-
     def apply_dws(self):
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
                 for k in range(0, len(self.dws[l - 1][j])):  # also bias
                     self.ws[l - 1][j][k] -= self.config.rate * self.dws[l - 1][j][k] / self.dh
-
-
