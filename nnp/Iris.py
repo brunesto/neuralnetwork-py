@@ -32,7 +32,7 @@ def normalize_column(df, column):
 
 config=TANH.clone()
 config.rate=0.2
-nn = NeuralNet(config)
+nn = NeuralNetNumpy(config)
 # read csv file
 df = pd.read_csv("../data/iris.data", header=None)
 

@@ -18,7 +18,7 @@ config.seed=0
 config.layer_sizes=[1,20,1]
 config.rate=0.1
 
-nn=NeuralNetNumpy(config)
+nn=NeuralNet(config)
 
 #nn.ws=[[[0.8,0.3]]]
 
@@ -37,7 +37,7 @@ def plotResults():
   plt.show()
 
 plotResults()
-for i in range (0,10):
+for i in range (0,3):
   
   learn(nn,data,20)
   #print("weights:",nn.ws)
