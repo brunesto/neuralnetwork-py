@@ -2,8 +2,9 @@
 # https://en.wikipedia.org/wiki/Iris_flower_data_set
 
 import pandas as pd
+from NeuralNetConfig import *
+from NeuralNetNumpy import *
 from NeuralNet import *
-
 
 # #
 # # compute the cost (i.e. avg error on all samples)
@@ -33,7 +34,7 @@ config=TANH.clone()
 config.rate=0.2
 nn = NeuralNet(config)
 # read csv file
-df = pd.read_csv("./data/iris.data", header=None)
+df = pd.read_csv("../data/iris.data", header=None)
 
 input_cols = [0, 1, 2, 3]
 output_cols = [5, 6, 7]
@@ -129,7 +130,7 @@ for i in range(0, len(df)):
 
 
 
-for i in range(0,5):
+for i in range(0,1):
   learn(nn,data,200)
   nn.config.rate*=0.8
 

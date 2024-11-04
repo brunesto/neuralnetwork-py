@@ -1,32 +1,12 @@
-#  resources
-#  python:
-#  https://github.com/blu3r4y/python-for-java-developers, couple of hours reading
-#  https://gto76.github.io/python-cheatsheet
-#
-#  3Blue1Brown, series on neural networks  https://www.youtube.com/watch?v=Ilg3gGewQ5U
-#
-#  Also a bit of proper AI help comes in handy: there was a bug in the derivation of bias in the 1st version of backtracking, ChatGPT found it
-#
-# done:
-# * forward cost
-# * simple backtracking
-# * classes
-#
-# todos:
-# 
-#
-# * try on 1 dimensional function, check that it can learn any
-# * try to make it a tiny bit faster (compile?)
-# * try on handwritting samples
-#
-# * switch to a proper library, in order to move on
+# rewrite of NeuralNet using numpy
 #
 
 
+import numpy as np
 import math
 import random
 import copy
-
+from NeuralNetConfig import *
 
 def zeros(s):
     v = []
@@ -42,78 +22,10 @@ def zeros2d(s1, s2):
     return v
 
 
-# configuration for neural network
-class NeuralNetConfig:
-    # config: number of neurons in each layer
-    layer_sizes = [4, 12, 3]
-    # learning rate
-    rate = 0.1
-    # seed for populating initial weights
-    seed = 0
-
-    normalize_z=False
-    random_weight=True
-    initial_weight_f=5
-
-    # activation function
-    def sigma(self, z: float) -> float:
-        v = math.tanh(z)
-        # v=min(max(z,-1),1)
-        return v
-
-    # derivative of activation function
-    # https://en.wikipedia.org/wiki/Activation_function
-    def sigmad(self, z: float) -> float:
-        s = math.tanh(z)
-        v = 1 - s * s
-        return v
-        
-    def clone(self):
-        return copy.deepcopy(self)
-
-# it seems that
-# TANH is not able to grow past the original weights
-# 
-TANH=NeuralNetConfig()
-TANH.sigma=lambda x:math.tanh(x)
-def tanhd(x):
-    s = math.tanh(x)
-    v = 1 - s * s
-    return v
-
-TANH.sigmad=tanhd
-    
-
-LINEAR=NeuralNetConfig()
-LINEAR.sigma=lambda x:x
-LINEAR.sigmad=lambda x:1
-
-RELU=NeuralNetConfig()
-RELU.sigma=lambda x:0.1*x if (x<0) else x
-RELU.sigmad=lambda x:0.1 if (x<0) else 1
-# error functions
-# since these are not expected to change it is not in config
-
-# single output neuron error function
-def error_function(output1, expected1):
-   return (output1 - expected1) * (output1 - expected1)
-
-# single output neuron error function derivative
-def error_functiond(output1, expected1):
-   return 2*(output1 - expected1)
-
-# output layer error
-def error_function_acc(outputs, expecteds):
-    acc2 = 0
-    for i in range(0, len(expecteds)):
-        acc2 += error_function(outputs[i], expecteds[i])
-    
-    e = acc2  
-    # print("outputs",outputs," expecteds",expecteds, " error:",e)
-    return e
 
 
-class NeuralNet:
+
+class NeuralNetNumpy:
 
     def __init__(self, config):
 
@@ -122,19 +34,19 @@ class NeuralNet:
         # layers
         self.ls = []
         for i in range(0, len(config.layer_sizes)):
-            self.ls.append(zeros(config.layer_sizes[i]))
+            self.ls.append(np.zeros((config.layer_sizes[i])))
 
         # for each neuron, keep its z value (z: sum of weighted input (incl bias) before activation function)
         self.zs = []
         for i in range(0, len(config.layer_sizes)):
-            self.zs.append(zeros(config.layer_sizes[i]))
+            self.zs.append(np.zeros(config.layer_sizes[i]))
 
         # weights
         # ws[0] are the weights to update l[1] from l[0]
         # ws[0][-1] is an extra weight which is the bias
         self.ws = []
         for li in range(1, len(config.layer_sizes)):
-            self.ws.append(zeros2d(config.layer_sizes[li], config.layer_sizes[li - 1] + 1))
+            self.ws.append(np.zeros((config.layer_sizes[li], config.layer_sizes[li - 1] + 1)))
 
         # now randomly populate weights
         random.seed(self.config.seed)
@@ -188,6 +100,7 @@ class NeuralNet:
         for i in range(1, len(self.config.layer_sizes)):
             # print(f"layer {i}")
             self.compute_layer(self.ls[i - 1], self.ws[i - 1], self.ls[i],self.zs[i])
+            #print("layer ",i,":",self.ls[i])
         return self.ls[-1]
 
     def compute_error(self, inputs, expecteds):
@@ -204,7 +117,7 @@ class NeuralNet:
         for row in samples:
             # print(i)
             acc += self.compute_error(row[0], row[1])
-            results.append(self.ls[-1][:])
+            results.append(self.ls[-1][:].tolist())
         e = acc / len(samples)
         return (e,results)
 
