@@ -78,15 +78,16 @@ class NeuralNetNumpy:
     # compute the  z+activation on lo
     # based on previous layer li and weight wo
     def compute_neuron(self, li, wo,b):
-        z = 0
-        ns = len(li)
-        for ni in range(0, ns):
-            z += li[ni] * wo[ni]
+        #z = 0
+        #ns = len(li)
+        #for ni in range(0, ns):
+        #    z += li[ni] * wo[ni]
+        z=li.dot(wo)
         z += b  # w[-1] is the bias
 
         wavg = z 
         if self.config.normalize_z:
-            wavg/= len(wo)
+            wavg/= len(wo)+1
 
         # activation function aka sigma
         a = self.config.sigma(wavg)
@@ -105,7 +106,7 @@ class NeuralNetNumpy:
     # forward computation
     def compute_network(self, inputs):
         # print("input",input)
-        self.ls[0] = inputs
+        self.ls[0] = np.array(inputs)
         for i in range(1, len(self.config.layer_sizes)):
             # print(f"layer {i}")
             self.compute_layer(self.ls[i - 1], self.ws[i - 1], self.bs[i-1],self.ls[i],self.zs[i])
@@ -176,7 +177,7 @@ class NeuralNetNumpy:
                 for k in range(0, len(self.ls[l - 1])):
                     d_z_w = self.ls[l - 1][k]
                     if self.config.normalize_z:
-                        d_z_w /= len(self.ls[l - 1])
+                        d_z_w /= len(self.ls[l - 1])+1
                     d_cost_w = d_cost_a * d_a_z * d_z_w
                     self.dws[l - 1][j][k] += d_cost_w
                 # bias
@@ -193,15 +194,20 @@ class NeuralNetNumpy:
                         d_z_preva = self.ws[l - 1][j][k]                        
                         d_cost_preva=(d_z_preva*d_a_z*d_cost_a) #/ len(self.ls[l])
                         if self.config.normalize_z:
-                            d_cost_preva /= len(self.ls[l])
+                            d_cost_preva /= len(self.ls[l])+1
                         self.dls[l - 1][k] += d_cost_preva
 
     def apply_dws(self):
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
-                for k in range(0, len(self.ls[l-1])):  # also bias
-                    gradientw=self.config.rate * self.dws[l - 1][j][k] / self.dh
-                    self.ws[l - 1][j][k] -= gradientw
+
+                self.dws[l - 1][j]*=(self.config.rate /self.dh)
+                self.ws[l - 1][j] -= self.dws[l - 1][j]
+
+
+                #for k in range(0, len(self.ls[l-1])):  # also bias
+                #    gradientw=self.config.rate * self.dws[l - 1][j][k] / self.dh
+                #    self.ws[l - 1][j][k] -= gradientw
                 gradientb=self.config.rate * self.dbs[l - 1][j] / self.dh
                 self.bs[l - 1][j] -= gradientb
     

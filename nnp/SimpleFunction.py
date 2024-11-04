@@ -37,7 +37,7 @@ def plotResults():
   plt.show()
 
 plotResults()
-for i in range (0,3):
+for i in range (0,1):
   
   learn(nn,data,20)
   #print("weights:",nn.ws)
