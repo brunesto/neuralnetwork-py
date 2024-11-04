@@ -1,6 +1,4 @@
 # rewrite of NeuralNet using numpy
-#
-
 
 import numpy as np
 import math
@@ -20,7 +18,6 @@ def zeros2d(s1, s2):
     for i in range(0, s1):
         v.append(zeros(s2))
     return v
-
 
 
 
@@ -71,6 +68,8 @@ class NeuralNetNumpy:
     def compute_neuron(self, li, wo):
         z = 0
         ns = len(li)
+
+
         for ni in range(0, ns):
             z += li[ni] * wo[ni]
         z += wo[ns]  # w[-1] is the bias
