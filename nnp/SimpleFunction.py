@@ -18,7 +18,7 @@ config.seed=0
 config.layer_sizes=[1,20,1]
 config.rate=0.1
 
-nn=NeuralNet(config)
+nn=NeuralNetNumpy(config)
 
 #nn.ws=[[[0.8,0.3]]]
 
