@@ -87,7 +87,7 @@ class NeuralNet:
 
         wavg = z 
         if self.config.normalize_z:
-            wavg/= len(wo)
+            wavg/= len(wo)+1
 
         # activation function aka sigma
         a = self.config.sigma(wavg)
@@ -187,9 +187,6 @@ class NeuralNet:
 
                 if l > 1:
                 # partial derivative of C over neurons for previous layer
-                #for j in range(0, len(self.ls[l])):
-                #    d_a_z = self.config.sigmad(self.zs[l][j])
-                #    d_cost_a = self.dls[l][j]
                     for k in range(0, len(self.ls[l - 1])):
                         d_z_preva = self.ws[l - 1][j][k]                        
                         d_cost_preva=(d_z_preva*d_a_z*d_cost_a) #/ len(self.ls[l])

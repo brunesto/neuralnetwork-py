@@ -173,29 +173,31 @@ class NeuralNetNumpy:
             for j in range(0, len(self.ls[l])):
                 d_a_z = self.config.sigmad(self.zs[l][j])
                 d_cost_a = self.dls[l][j]
+
+                norm= 1/(len(self.ls[l - 1])+1) if self.config.normalize_z else 1
+                self.dws[l - 1][j]+=self.ls[l - 1]*(d_cost_a * d_a_z * norm)
                 # weights
-                for k in range(0, len(self.ls[l - 1])):
-                    d_z_w = self.ls[l - 1][k]
-                    if self.config.normalize_z:
-                        d_z_w /= len(self.ls[l - 1])+1
-                    d_cost_w = d_cost_a * d_a_z * d_z_w
-                    self.dws[l - 1][j][k] += d_cost_w
+                #for k in range(0, len(self.ls[l - 1])):
+                    #d_z_w = self.ls[l - 1][k]
+                    #if self.config.normalize_z:
+                        #d_z_w /= len(self.ls[l - 1])+1
+                    #d_cost_w = d_cost_a * d_a_z * d_z_w
+                    #self.dws[l - 1][j][k] += d_cost_w
                 # bias
                 d_z_b=1
                 d_cost_b = d_cost_a * d_a_z * d_z_b
                 self.dbs[l - 1][j] += d_cost_b
 
                 if l > 1:
-                # partial derivative of C over neurons for previous layer
-                #for j in range(0, len(self.ls[l])):
-                #    d_a_z = self.config.sigmad(self.zs[l][j])
-                #    d_cost_a = self.dls[l][j]
-                    for k in range(0, len(self.ls[l - 1])):
-                        d_z_preva = self.ws[l - 1][j][k]                        
-                        d_cost_preva=(d_z_preva*d_a_z*d_cost_a) #/ len(self.ls[l])
-                        if self.config.normalize_z:
-                            d_cost_preva /= len(self.ls[l])+1
-                        self.dls[l - 1][k] += d_cost_preva
+                    # partial derivative of C over neurons for previous layer  
+                    norm= 1/(len(self.ls[l])+1) if self.config.normalize_z else 1
+                    self.dls[l - 1]+= self.ws[l - 1][j]*(d_a_z*d_cost_a*norm)
+                    #for k in range(0, len(self.ls[l - 1])):
+                    #    d_z_preva = self.ws[l - 1][j][k]                        
+                    #    d_cost_preva=(d_z_preva*d_a_z*d_cost_a) #/ len(self.ls[l])
+                    #    if self.config.normalize_z:
+                    #        d_cost_preva /= len(self.ls[l])+1
+                    #    self.dls[l - 1][k] += d_cost_preva
 
     def apply_dws(self):
         for l in range(1, len(self.config.layer_sizes)):
