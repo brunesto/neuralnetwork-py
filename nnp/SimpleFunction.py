@@ -5,7 +5,6 @@ from NeuralNet import *
 from NeuralNetNumpy import *
 import matplotlib.pyplot as plt
 
-
 def f(x:float)->float:
   # if x>0:
   #    return 2-x
@@ -35,6 +34,9 @@ def plotResults():
   plt.plot(inputs, outputs, inputs, os)
   plt.ylabel('in')
   plt.show()
+
+
+
 
 plotResults()
 for i in range (0,1):

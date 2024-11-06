@@ -228,6 +228,6 @@ def learn(nn,data,iterations):
       nn.apply_dws()
       nn.reset_dws()
       e = nn.cost(data)[0]
-      print("itartion:", x, " cost:", e)
+      print("iteration:", x, " cost:", e)
 
   #print("ws", nn.ws)

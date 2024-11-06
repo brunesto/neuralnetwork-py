@@ -31,10 +31,11 @@ def normalize_column(df, column):
 
 
 config=TANH.clone()
+config.layer_sizes = [4, 12, 3]
 config.rate=0.1
 nn = NeuralNetNumpy(config)
 # read csv file
-df = pd.read_csv("../data/iris.data", header=None)
+df = pd.read_csv("./data/iris.data", header=None)
 
 input_cols = [0, 1, 2, 3]
 output_cols = [5, 6, 7]
@@ -128,6 +129,10 @@ data=[]
 for i in range(0, len(df)):
     data.append((list(df.iloc[i, input_cols]), list(df.iloc[i, output_cols])));
 
+import pickle
+
+with open('iris-weights.pickle', 'rb') as f:
+  nn.ws=pickle.load( f)
 
 
 for i in range(0,2):
@@ -165,4 +170,9 @@ for i in range(0,2):
 #     e = nn.cost(test)
 #     print("x:", x, " cost:", e)
 
-# print("ws", nn.ws)
+
+import pickle
+
+with open('iris-weights.pickle', 'wb') as f:
+  pickle.dump(nn.ws, f,protocol=pickle.HIGHEST_PROTOCOL)
+

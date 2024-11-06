@@ -65,7 +65,7 @@ class NeuralNetNumpy:
                     w=no / len(self.ws[l-1])  
                 self.bs[l-1][no] = w*self.config.initial_weight_f
                     
-        print(self.ws)
+        #print(self.ws)
         self.dh = 0
         self.dls = None
         self.adws = None
@@ -191,6 +191,7 @@ class NeuralNetNumpy:
                 if l > 1:
                     # partial derivative of C over neurons for previous layer  
                     norm= 1/(len(self.ls[l])+1) if self.config.normalize_z else 1
+                    
                     self.dls[l - 1]+= self.ws[l - 1][j]*(d_a_z*d_cost_a*norm)
                     #for k in range(0, len(self.ls[l - 1])):
                     #    d_z_preva = self.ws[l - 1][j][k]                        
@@ -203,8 +204,8 @@ class NeuralNetNumpy:
         for l in range(1, len(self.config.layer_sizes)):
             for j in range(0, len(self.ls[l])):
 
-                self.dws[l - 1][j]*=(self.config.rate /self.dh)
-                self.ws[l - 1][j] -= self.dws[l - 1][j]
+                gradientw=self.dws[l - 1][j]*(self.config.rate /self.dh)
+                self.ws[l - 1][j] -= gradientw
 
 
                 #for k in range(0, len(self.ls[l-1])):  # also bias
@@ -214,12 +215,12 @@ class NeuralNetNumpy:
                 self.bs[l - 1][j] -= gradientb
     
 
-def learn(nn,data,iterations):
+def learn(nn,data,iterations,use=1):
   #random.seed(0)
   data=data[:]
   random.shuffle(data)
 
-  splitAt = int(len(data) * 1)
+  splitAt = int(len(data) * use)
   train = data[:splitAt]
   test = data[splitAt:]
   #print("train", train)
@@ -227,7 +228,7 @@ def learn(nn,data,iterations):
 
   #print(" cost:", e)
   e = nn.cost(data)[0]
-  print("itartion init cost:", e)
+  print("iteration init cost:", e)
   for x in range(1, iterations):
       # for sub_train in sub_trains:
       for row in train:
