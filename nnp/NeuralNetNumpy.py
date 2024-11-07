@@ -214,31 +214,3 @@ class NeuralNetNumpy:
                 gradientb=self.config.rate * self.dbs[l - 1][j] / self.dh
                 self.bs[l - 1][j] -= gradientb
     
-
-def learn(nn,data,iterations,use=1):
-  #random.seed(0)
-  data=data[:]
-  random.shuffle(data)
-
-  splitAt = int(len(data) * use)
-  train = data[:splitAt]
-  test = data[splitAt:]
-  #print("train", train)
-  #print("test", test)
-
-  #print(" cost:", e)
-  e = nn.cost(data)[0]
-  print("iteration init cost:", e)
-  for x in range(1, iterations):
-      # for sub_train in sub_trains:
-      for row in train:
-          nn.update_backtrack(row[0],row[1])
-      #print ("ws",nn.ws)
-      #print ("dh",nn.dh,"dws:",nn.dws)
-
-      nn.apply_dws()
-      nn.reset_dws()
-      e = nn.cost(data)[0]
-      print("itartion:", x, " cost:", e)
-
-  #print("ws", nn.ws)

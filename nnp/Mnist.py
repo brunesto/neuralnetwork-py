@@ -6,7 +6,9 @@
 import numpy as np
 import struct
 import json
+import pickle
 from NeuralNetNumpy import *
+import code; 
 
 def get_data(marker):
   with open('./data/'+marker+'-images-idx3-ubyte', 'rb') as f:
@@ -36,7 +38,7 @@ test=get_data("t10k")
 print("read train  data:",len(data))
 print("read test data:",len(test))
 
-data=data[:10000]
+data=data
 test=test[:1000]
 
 
@@ -53,12 +55,41 @@ config.rate=0.1
 config.initial_weight_f=0.1
 nn=NeuralNetNumpy(config)
 
+#  learn(nn,data,test,epochs=10,iterations=3,use=0.1,rate_decay=0.8)
 
-for i in range(0,10):
-  learn(nn,data,10,0.1)
-  e = nn.cost(test)[0]
-  print(f"after {i} trainings, test cost:", e)
 
-  import pickle
-  with open(f'mnist-weights-{i}.pickle', 'wb') as f:
-    pickle.dump(nn.ws, f,protocol=pickle.HIGHEST_PROTOCOL)
+
+with open('./computed/mnist-weights-9.pickle', 'rb') as f:
+  nn.ws=pickle.load( f)
+
+
+
+def pretty_print_input(sample,res=None):
+  idx=0
+  for y in range(0,28):
+    for x in range(0,28):
+      print(" " if sample[idx]<0.1 else "x",end="")
+      idx+=1
+    print()  
+
+def pretty_print_answer(res):
+  if res is not None:
+    answers=0
+    for i in range(0,10):
+      if (res[i]>0.2):
+        print(i,res[i])
+        answers+=1
+    if answers==0:
+        print("no candidate")
+
+# dump the first 100 digits
+for i in range(0,100):
+  pretty_print_input(test[i][0])
+  print ("expected:")
+  pretty_print_answer(test[i][1])
+  print ("output:")
+  pretty_print_answer(nn.compute_network(test[i][0]))
+
+
+
+#code.interact(local=locals())

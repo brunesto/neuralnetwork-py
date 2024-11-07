@@ -115,30 +115,70 @@ def error_function_acc(outputs, expecteds):
 
 
 
-def learn(nn,data,iterations):
+# def learn(nn,data,iterations):
+#   #random.seed(0)
+#   data=data[:]
+#   random.shuffle(data)
+
+#   splitAt = int(len(data) * 1)
+#   train = data[:splitAt]
+#   test = data[splitAt:]
+#   #print("train", train)
+#   #print("test", test)
+
+#   #print(" cost:", e)
+#   e = nn.cost(data)[0]
+#   print("itartion init cost:", e)
+#   for x in range(1, iterations):
+#       # for sub_train in sub_trains:
+#       for row in train:
+#           nn.update_backtrack(row[0],row[1])
+#       #print ("ws",nn.ws)
+#       #print ("dh",nn.dh,"dws:",nn.dws)
+
+#       nn.apply_dws()
+#       nn.reset_dws()
+#       e = nn.cost(data)[0]
+#       print("itartion:", x, " cost:", e)
+
+#   #print("ws", nn.ws)
+
+
+import pickle
+def learn(nn,data,realtest,epochs=1,iterations=10,use=1,rate_decay=0.8):
   #random.seed(0)
-  data=data[:]
-  random.shuffle(data)
+  for epoch in range(1, epochs):
+    data=data[:]
+    random.shuffle(data)
 
-  splitAt = int(len(data) * 1)
-  train = data[:splitAt]
-  test = data[splitAt:]
-  #print("train", train)
-  #print("test", test)
+    splitAt = int(len(data) * use)
+    print(f"shuffling and cutting at {use:.0%} = index {splitAt}")
+    train = data[:splitAt]
+    test = data[splitAt:]
+    #print("train", train)
+    #print("test", test)
 
-  #print(" cost:", e)
-  e = nn.cost(data)[0]
-  print("itartion init cost:", e)
-  for x in range(1, iterations):
-      # for sub_train in sub_trains:
-      for row in train:
-          nn.update_backtrack(row[0],row[1])
-      #print ("ws",nn.ws)
-      #print ("dh",nn.dh,"dws:",nn.dws)
+    #print(" cost:", e)
+    print("data ready")
+    e = nn.cost(realtest)[0]
+    print("epoch init cost:", e)
+    for x in range(1, iterations):
+        # for sub_train in sub_trains:
+        for row in train:
+            nn.update_backtrack(row[0],row[1])
+        #print ("ws",nn.ws)
+        #print ("dh",nn.dh,"dws:",nn.dws)
+        print("iteration done")
+        nn.apply_dws()
+        nn.reset_dws()
+        e = nn.cost(realtest)[0]
+        print(f"epoch {epoch}/{epochs} iteration:{x}/{iterations} cost:", e)
 
-      nn.apply_dws()
-      nn.reset_dws()
-      e = nn.cost(data)[0]
-      print("itartion:", x, " cost:", e)
+    with open(f'tmp/weights-{epoch}.pickle', 'wb') as f:
+      pickle.dump(nn.ws, f,protocol=pickle.HIGHEST_PROTOCOL)
 
-  #print("ws", nn.ws)
+    nn.config.rate*=rate_decay
+    print(f"rate changed to {nn.config.rate}")    
+    
+
+    #print("ws", nn.ws)
