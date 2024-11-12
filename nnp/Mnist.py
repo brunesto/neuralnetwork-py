@@ -8,20 +8,21 @@ import struct
 import json
 import pickle
 from NeuralNetNumpy import *
-import code; 
+from NeuralNet import *
+
 
 def get_data(marker):
   with open('./data/'+marker+'-images-idx3-ubyte', 'rb') as f:
     magic, size = struct.unpack('>II', f.read(8))
     nrows, ncols = struct.unpack('>II', f.read(8))
-    x_train = np.fromfile(f, dtype=np.dtype(np.uint8)).newbyteorder(">")
+    x_train = np.fromfile(f, dtype=np.dtype(np.uint8))#.newbyteorder(">")
     x_train = x_train.reshape((size,nrows*ncols))
     x_train = x_train/256 
 
 
   with open('./data/'+marker+'-labels-idx1-ubyte', 'rb') as i:
      magic, size = struct.unpack('>II', i.read(8))
-     labels = np.fromfile(i, dtype=np.dtype(np.uint8)).newbyteorder(">")    
+     labels = np.fromfile(i, dtype=np.dtype(np.uint8))#.newbyteorder(">")    
 
   y_train=[]
   for label in labels:
@@ -55,13 +56,14 @@ config.rate=0.1
 config.initial_weight_f=0.1
 nn=NeuralNetNumpy(config)
 
-#  learn(nn,data,test,epochs=10,iterations=3,use=0.1,rate_decay=0.8)
 
 
 
-with open('./computed/mnist-weights-9.pickle', 'rb') as f:
-  nn.ws=pickle.load( f)
+#with open('./computed/mnist-weights-9.pickle', 'rb') as f:
+#  nn.ws=pickle.load( f)
 
+
+learn(nn,data,test,epochs=1,iterations=1,use=0.1,rate_decay=0.8)
 
 
 def pretty_print_input(sample,res=None):
@@ -83,7 +85,7 @@ def pretty_print_answer(res):
         print("no candidate")
 
 # dump the first 100 digits
-for i in range(0,100):
+for i in range(0,0):
   pretty_print_input(test[i][0])
   print ("expected:")
   pretty_print_answer(test[i][1])
@@ -91,5 +93,5 @@ for i in range(0,100):
   pretty_print_answer(nn.compute_network(test[i][0]))
 
 
-
+#import code; 
 #code.interact(local=locals())

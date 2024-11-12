@@ -1,4 +1,4 @@
-# basic nn implementation using no libraries
+# basic neural network implementation using no libraries
 
 import math
 import random
@@ -6,18 +6,18 @@ import copy
 from NeuralNetConfig import *
 
 
+def zeros(s):
+    v = []
+    for i in range(0, s):
+        v.append(0)
+    return v
 
 
-
-
-
-
-
-
-
-
-
-
+def zeros2d(s1, s2):
+    v = []
+    for i in range(0, s1):
+        v.append(zeros(s2))
+    return v
 
 
 
@@ -66,7 +66,7 @@ class NeuralNet:
                     w=no / len(self.ws[l-1])  
                 self.bs[l-1][no] = w*self.config.initial_weight_f
                     
-        print(self.ws)
+        #print(self.ws)
         self.dh = 0
         self.dls = None
         self.adws = None
@@ -203,31 +203,3 @@ class NeuralNet:
                 gradientb=self.config.rate * self.dbs[l - 1][j] / self.dh
                 self.bs[l - 1][j] -= gradientb
     
-
-# def learn(nn,data,iterations):
-#   #random.seed(0)
-#   data=data[:]
-#   random.shuffle(data)
-
-#   splitAt = int(len(data) * 1)
-#   train = data[:splitAt]
-#   test = data[splitAt:]
-#   #print("train", train)
-#   #print("test", test)
-
-#   #print(" cost:", e)
-#   e = nn.cost(data)[0]
-#   print("itartion init cost:", e)
-#   for x in range(1, iterations):
-#       # for sub_train in sub_trains:
-#       for row in train:
-#           nn.update_backtrack(row[0],row[1])
-#       #print ("ws",nn.ws)
-#       #print ("dh",nn.dh,"dws:",nn.dws)
-
-#       nn.apply_dws()
-#       nn.reset_dws()
-#       e = nn.cost(data)[0]
-#       print("iteration:", x, " cost:", e)
-
-#   #print("ws", nn.ws)

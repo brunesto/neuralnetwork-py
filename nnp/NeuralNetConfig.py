@@ -1,45 +1,11 @@
-#  resources
-#  python:
-#  https://github.com/blu3r4y/python-for-java-developers, couple of hours reading
-#  https://gto76.github.io/python-cheatsheet
 #
-#  3Blue1Brown, series on neural networks  https://www.youtube.com/watch?v=Ilg3gGewQ5U
+# NeuralNetConfig is used to define the neural network accross all samples
 #
-#  Also a bit of proper AI help comes in handy: there was a bug in the derivation of bias in the 1st version of backtracking, ChatGPT found it
-#
-# done:
-# * forward cost
-# * simple backtracking
-# * classes
-#
-# todos:
-# 
-#
-# * try on 1 dimensional function, check that it can learn any
-# * try to make it a tiny bit faster (compile?)
-# * try on handwritting samples
-#
-# * switch to a proper library, in order to move on
-#
-
-
+import pickle
 import math
 import random
 import copy
 
-
-def zeros(s):
-    v = []
-    for i in range(0, s):
-        v.append(0)
-    return v
-
-
-def zeros2d(s1, s2):
-    v = []
-    for i in range(0, s1):
-        v.append(zeros(s2))
-    return v
 
 
 # configuration for neural network
@@ -57,16 +23,12 @@ class NeuralNetConfig:
 
     # activation function
     def sigma(self, z: float) -> float:
-        v = math.tanh(z)
-        # v=min(max(z,-1),1)
-        return v
+        return None
 
     # derivative of activation function
     # https://en.wikipedia.org/wiki/Activation_function
     def sigmad(self, z: float) -> float:
-        s = math.tanh(z)
-        v = 1 - s * s
-        return v
+        return None
         
     def clone(self):
         return copy.deepcopy(self)
@@ -115,39 +77,11 @@ def error_function_acc(outputs, expecteds):
 
 
 
-# def learn(nn,data,iterations):
-#   #random.seed(0)
-#   data=data[:]
-#   random.shuffle(data)
-
-#   splitAt = int(len(data) * 1)
-#   train = data[:splitAt]
-#   test = data[splitAt:]
-#   #print("train", train)
-#   #print("test", test)
-
-#   #print(" cost:", e)
-#   e = nn.cost(data)[0]
-#   print("itartion init cost:", e)
-#   for x in range(1, iterations):
-#       # for sub_train in sub_trains:
-#       for row in train:
-#           nn.update_backtrack(row[0],row[1])
-#       #print ("ws",nn.ws)
-#       #print ("dh",nn.dh,"dws:",nn.dws)
-
-#       nn.apply_dws()
-#       nn.reset_dws()
-#       e = nn.cost(data)[0]
-#       print("itartion:", x, " cost:", e)
-
-#   #print("ws", nn.ws)
 
 
-import pickle
 def learn(nn,data,realtest,epochs=1,iterations=10,use=1,rate_decay=0.8):
   #random.seed(0)
-  for epoch in range(1, epochs):
+  for epoch in range(0, epochs):
     data=data[:]
     random.shuffle(data)
 

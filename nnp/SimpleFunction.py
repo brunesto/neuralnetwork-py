@@ -14,7 +14,7 @@ def f(x:float)->float:
 config=RELU.clone()
 config.seed=0
 
-config.layer_sizes=[1,20,1]
+config.layer_sizes=[1,5,5,1]
 config.rate=0.1
 
 nn=NeuralNetNumpy(config)
@@ -39,12 +39,12 @@ def plotResults():
 
 
 plotResults()
-for i in range (0,1):
+
   
-  learn(nn,data,20)
+learn(nn,data,data,5,100)
   #print("weights:",nn.ws)
-  plotResults()
-  config.rate*=0.9
+plotResults()
+#  config.rate*=0.9
 
 
 
