@@ -51,7 +51,7 @@ test=test[:1000]
 config=RELU.clone()
 config.seed=0
 
-config.layer_sizes=[28*28,800,10]
+config.layer_sizes=[28*28,512,10]
 config.rate=0.1
 config.initial_weight_f=0.1
 nn=NeuralNetNumpy(config)
@@ -59,11 +59,11 @@ nn=NeuralNetNumpy(config)
 
 
 
-#with open('./computed/mnist-weights-9.pickle', 'rb') as f:
-#  nn.ws=pickle.load( f)
+with open('./computed/weights-9.pickle', 'rb') as f:
+  nn.ws=pickle.load( f)
 
 
-learn(nn,data,test,epochs=1,iterations=1,use=0.1,rate_decay=0.8)
+learn(nn,data,test,epochs=3,iterations=1,use=0.02,rate_decay=0.8)
 
 
 def pretty_print_input(sample,res=None):
@@ -85,7 +85,7 @@ def pretty_print_answer(res):
         print("no candidate")
 
 # dump the first 100 digits
-for i in range(0,0):
+for i in range(0,10):
   pretty_print_input(test[i][0])
   print ("expected:")
   pretty_print_answer(test[i][1])

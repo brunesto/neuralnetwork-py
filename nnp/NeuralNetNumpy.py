@@ -104,7 +104,7 @@ class NeuralNetNumpy:
             zo[no] = z
 
     # forward computation
-    def compute_network(self, inputs):
+    def compute_network_i(self, inputs):
         # print("input",input)
         self.ls[0] = np.array(inputs)
         for i in range(1, len(self.config.layer_sizes)):
@@ -112,24 +112,20 @@ class NeuralNetNumpy:
             self.compute_layer(self.ls[i - 1], self.ws[i - 1], self.bs[i-1],self.ls[i],self.zs[i])
             #print("layer ",i,":",self.ls[i])
         return self.ls[-1]
+    def compute_network(self, inputs):
+        return self.compute_network_i(inputs).tolist()
 
-    def compute_error(self, inputs, expecteds):
-        self.compute_network(inputs)
-        e = error_function_acc(self.ls[-1], expecteds)
-        return e
+    # def compute_error(self, inputs, expecteds):
+        
+    #     e = error_function_acc(self.ls[-1], expecteds)
+        
+    #     # compute the correctness, valid only when output is a single category
+    #     predicted=argmax(self.ls[-1])
+    #     expected=argmax(expecteds)
+    #     correct=1 if predicted==expected else 0
+    #     return e,correct
 
-    #
-    # compute the cost over many samples (i.e. avg error on all samples)
-    #
-    def cost(self, samples):
-        acc = 0
-        results=[]
-        for row in samples:
-            # print(i)
-            acc += self.compute_error(row[0], row[1])
-            results.append(self.ls[-1][:].tolist())
-        e = acc / len(samples)
-        return (e,results)
+   
 
     def reset_dls(self):
 
@@ -156,7 +152,7 @@ class NeuralNetNumpy:
     def update_backtrack(self, inputs, expecteds):
         # L is last layer
         L = len(self.ls) - 1
-        self.compute_network(inputs)
+        self.compute_network_i(inputs)
         e = error_function_acc(self.ls[-1], expecteds)
         # print("e",e)
 

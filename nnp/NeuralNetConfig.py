@@ -53,6 +53,12 @@ LINEAR.sigmad=lambda x:1
 RELU=NeuralNetConfig()
 RELU.sigma=lambda x:0.1*x if (x<0) else x
 RELU.sigmad=lambda x:0.1 if (x<0) else 1
+
+RELUPYTORCH=NeuralNetConfig()
+RELUPYTORCH.sigma=lambda x:0 if (x<0) else x
+RELUPYTORCH.sigmad=lambda x:0 if (x<0) else 1
+
+
 # error functions
 # since these are not expected to change it is not in config
 
@@ -76,6 +82,42 @@ def error_function_acc(outputs, expecteds):
 
 
 
+def argmax(values):
+  return max(range(len(values)), key=values.__getitem__)
+
+
+# compute the error + accuracy for a single run
+def compute_metrics(outputs, expecteds):
+        e = error_function_acc(outputs, expecteds)
+        
+        # compute the correctness, valid only when output is a single category
+        predicted=argmax(outputs)
+        expected=argmax(expecteds)
+        correct=1 if predicted==expected else 0
+        return e,correct
+
+    
+ # #
+    # compute the cost over many samples (i.e. avg error on all samples)
+    #
+def cost(nn, samples,keep_output=False):
+    e = 0
+    a=0
+    correct=0
+    results=[]
+    for row in samples:
+        # print(i)
+        outputs=nn.compute_network(row[0])
+        e1,a1=compute_metrics(outputs,row[1])
+    
+
+        e+=e1
+        a+=a1
+        if (keep_output):
+            results.append(outputs[:])
+    e/= len(samples)
+    a/= len(samples)
+    return (e,a,results)
 
 
 
@@ -94,9 +136,9 @@ def learn(nn,data,realtest,epochs=1,iterations=10,use=1,rate_decay=0.8):
 
     #print(" cost:", e)
     print("data ready")
-    e = nn.cost(realtest)[0]
-    print("epoch init cost:", e)
-    for x in range(1, iterations):
+    runs = cost(nn,realtest)
+    print("epoch init cost:", runs[0],runs[2]," iterations:",iterations)
+    for x in range(0, iterations):
         # for sub_train in sub_trains:
         for row in train:
             nn.update_backtrack(row[0],row[1])
@@ -105,8 +147,8 @@ def learn(nn,data,realtest,epochs=1,iterations=10,use=1,rate_decay=0.8):
         print("iteration done")
         nn.apply_dws()
         nn.reset_dws()
-        e = nn.cost(realtest)[0]
-        print(f"epoch {epoch}/{epochs} iteration:{x}/{iterations} cost:", e)
+        runs = cost(nn,realtest)
+        print(f"epoch {epoch}/{epochs} iteration:{x}/{iterations} cost:", runs[0],runs[2])
 
     with open(f'tmp/weights-{epoch}.pickle', 'wb') as f:
       pickle.dump(nn.ws, f,protocol=pickle.HIGHEST_PROTOCOL)

@@ -32,10 +32,10 @@ def normalize_column(df, column):
 
 config=TANH.clone()
 config.layer_sizes = [4, 12, 3]
-config.rate=0.2
+config.rate=0.1
 
 # nn = NeuralNet(config)
-nn = NeuralNetNumpy(config)
+nn = NeuralNet(config)
 # read csv file
 df = pd.read_csv("./data/iris.data", header=None)
 
@@ -137,7 +137,7 @@ for i in range(0, len(df)):
 
 
 #for i in range(0,20):
-learn(nn,data,data,5,20,rate_decay=0.9),
+learn(nn,data,data,5,50,rate_decay=0.8),
   #nn.config.rate*=0.8
 
 

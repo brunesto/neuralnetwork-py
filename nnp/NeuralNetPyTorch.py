@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.transforms import ToTensor
 
-from Mnist import get_data
+#from Mnist import get_data
 
 device = (
     "cuda"
@@ -31,7 +31,7 @@ training_data = datasets.MNIST(
 
 
 
-test_data = datasets.FashionMNIST(
+test_data = datasets.MNIST(
     root="data",
     train=False,
     download=True,
@@ -42,6 +42,7 @@ train_dataloader = DataLoader(training_data, batch_size=64)
 test_dataloader = DataLoader(test_data, batch_size=64)
 
 
+print("ehben1?")
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
@@ -54,7 +55,6 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(512, 10),
         )
-
     def forward(self, x):
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
@@ -118,6 +118,8 @@ epochs = 5
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
+
+print("ehben?")
 epochs = 10
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")

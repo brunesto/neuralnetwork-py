@@ -113,23 +113,31 @@ class NeuralNet:
             #print("layer ",i,":",self.ls[i])
         return self.ls[-1]
 
+
+    # TODO put me in common code as compute_error(outputs, expecteds):
     def compute_error(self, inputs, expecteds):
         self.compute_network(inputs)
         e = error_function_acc(self.ls[-1], expecteds)
-        return e
+        
+        # compute the correctness, valid only when output is a single category
+        predicted=argmax(self.ls[-1])
+        expected=argmax(expecteds)
+        correct=1 if predicted==expected else 0
+        return e,correct
 
+    
     #
     # compute the cost over many samples (i.e. avg error on all samples)
     #
-    def cost(self, samples):
-        acc = 0
-        results=[]
-        for row in samples:
-            # print(i)
-            acc += self.compute_error(row[0], row[1])
-            results.append(self.ls[-1][:])
-        e = acc / len(samples)
-        return (e,results)
+    #def cost(self, samples):
+    ##    acc = 0
+     #   results=[]
+     #   for row in samples:
+     #       # print(i)
+     #       acc += self.compute_error(row[0], row[1])[0]
+     #       results.append(self.ls[-1][:])
+     #   e = acc / len(samples)
+     #   return (e,results)
 
     def reset_dls(self):
 
