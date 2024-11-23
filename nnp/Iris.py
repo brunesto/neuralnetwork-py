@@ -5,6 +5,7 @@ import pandas as pd
 from NeuralNetConfig import *
 from NeuralNetNumpy import *
 from NeuralNet import *
+from CsvHelper import *
 
 # #
 # # compute the cost (i.e. avg error on all samples)
@@ -30,7 +31,7 @@ def normalize_column(df, column):
     )
 
 
-config=TANH.clone()
+config=RELU.clone()
 config.layer_sizes = [4, 12, 3]
 config.rate=0.1
 
@@ -136,9 +137,35 @@ for i in range(0, len(df)):
   #nn.ws=pickle.load( f)
 
 
+
+
+with open("weights.csv", "w") as text_file:
+    text_file.write(dumpNeuralNet(nn))
+
+with open("weights.csv", "r") as text_file:
+    consumeNeuralNet(nn,text_file.readlines())
+
+with open("weights2.csv", "w") as text_file:
+    text_file.write(dumpNeuralNet(nn))
+
+
+# print(data[0])
+# print(cost(nn,[data[0]],keep_output=True))
+# nn.update_backtrack(data[0][0],data[0][1])
+
+
+# print(nn.dws)
+# print(nn.dbs)
+
 #for i in range(0,20):
-learn(nn,data,data,5,50,rate_decay=0.8),
+#learn(nn,data,data,1,10,rate_decay=0.8),
   #nn.config.rate*=0.8
+
+learn(nn,data,data,epochs=200,iterations=10,use=1,rate_decay=0.99)
+print(cost(nn,data))
+
+with open("weights.csv", "w") as text_file:
+    text_file.write(dumpNeuralNet(nn))
 
 
 # all = data#list(range(0, len(data)))
@@ -176,4 +203,6 @@ learn(nn,data,data,5,50,rate_decay=0.8),
 
 #with open('iris-weights.pickle', 'wb') as f:
   #pickle.dump(nn.ws, f,protocol=pickle.HIGHEST_PROTOCOL)
+
+
 

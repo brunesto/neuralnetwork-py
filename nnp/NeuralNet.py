@@ -117,7 +117,7 @@ class NeuralNet:
     # TODO put me in common code as compute_error(outputs, expecteds):
     def compute_error(self, inputs, expecteds):
         self.compute_network(inputs)
-        e = error_function_acc(self.ls[-1], expecteds)
+        e = error_function_avg(self.ls[-1], expecteds)
         
         # compute the correctness, valid only when output is a single category
         predicted=argmax(self.ls[-1])
@@ -165,7 +165,7 @@ class NeuralNet:
         # L is last layer
         L = len(self.ls) - 1
         self.compute_network(inputs)
-        e = error_function_acc(self.ls[-1], expecteds)
+        e = error_function_avg(self.ls[-1], expecteds)
         # print("e",e)
 
         self.reset_dls()

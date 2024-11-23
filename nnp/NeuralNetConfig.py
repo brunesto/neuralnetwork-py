@@ -71,13 +71,13 @@ def error_functiond(output1, expected1):
    return 2*(output1 - expected1)
 
 # output layer error
-def error_function_acc(outputs, expecteds):
+def error_function_avg(outputs, expecteds):
     acc2 = 0
     for i in range(0, len(expecteds)):
         acc2 += error_function(outputs[i], expecteds[i])
     
-    e = acc2  
-    # print("outputs",outputs," expecteds",expecteds, " error:",e)
+    e = acc2/ len(expecteds) 
+    #print("outputs",outputs," expecteds",expecteds, " error:",e)
     return e
 
 
@@ -88,7 +88,7 @@ def argmax(values):
 
 # compute the error + accuracy for a single run
 def compute_metrics(outputs, expecteds):
-        e = error_function_acc(outputs, expecteds)
+        e = error_function_avg(outputs, expecteds)
         
         # compute the correctness, valid only when output is a single category
         predicted=argmax(outputs)
